@@ -38,6 +38,8 @@ def capture_video():
             img_filename=generate_video_filename(folder='frames', prefix='frame', ext='.jpg') #зберегання кадра як зображення 
             cv2.imwrite(img_filename, frame)
             print(f"Saved frame as: {img_filename}")
-capture_video()
+            
+if __name__=="__main__":
+    capture_video()
 
  

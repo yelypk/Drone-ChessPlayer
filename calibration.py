@@ -3,7 +3,7 @@ import numpy as np
 import glob
 import os 
 
-CHB_SIZE=(7, 7)
+CHB_SIZE=(8, 6)
 CRITERIES=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 def coordination_points(board_size):
@@ -14,28 +14,34 @@ def coordination_points(board_size):
 def collections(image_folder, board_size):
     imgpoints = []
     deskpoints = []
-    image_size=[]
+    image_size = []
 
     cop = coordination_points(board_size)
     images = glob.glob(os.path.join(image_folder, '*.jpg'))
+
     for fname in images:
+        print(f"Processed: {fname}")
         img = cv2.imread(fname)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.equalizeHist(gray)
 
-        ret, corners = cv2.findChessboardCorners(gray, board_size, flags=cv2.CALIB_CB_ADAPTIVE_THRESH
-                                                +cv2.CALIB_CB_NORMALIZE_IMAGE)
-        image_size=gray.shape[::-1]
+        ret, corners = cv2.findChessboardCorners(gray, board_size)
+
+        image_size = gray.shape[::-1]
 
         if ret:
+            print("Founded!")
             deskpoints.append(cop)
             corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIES)
             imgpoints.append(corners2)
-            
 
             img_drawn = cv2.drawChessboardCorners(img, board_size, corners2, ret)
-            cv2.imshow('Corners', img_drawn)
-            cv2.waitKey(100)
+            cv2.imshow('Founded corners', img_drawn)
+        else:
+            print("NO CORNERS")
+            cv2.imshow("Image without corners", img)
+
+        cv2.waitKey(0)
 
     cv2.destroyAllWindows()
     return deskpoints, imgpoints, image_size
@@ -58,7 +64,7 @@ def undistort_image(image_path, mtx, dist):
 
 def main():
     image_folder = 'frames' 
-    example_image = 'frames/frame_2025-07-02_19-43-16-681083.jpg'
+    example_image = 'frames/kFM1C.jpg'
 
     deskpoints, imgpoints, image_size = collections(image_folder, CHB_SIZE)
     mtx, dist, rvecs, tvecs = calibrate_camera(deskpoints, imgpoints, image_size)
@@ -72,5 +78,5 @@ def main():
     cv2.imwrite('calibrated_result.jpg', result)
     print("Saved undistorted image as calibrated_result.jpg")
 
-if __name__ == "__main__":
+if __name__ == "__main__": #для того, щоб використовувати код як підключаємий пакет
     main()
