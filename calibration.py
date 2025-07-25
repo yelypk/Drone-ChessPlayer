@@ -11,7 +11,7 @@ def coordination_points(board_size):
     cop[:, :2] = np.mgrid[0:board_size[0], 0:board_size[1]].T.reshape(-1, 2)
     return cop
 
-def collections(image_folder, board_size):
+def collections(image_folder, board_size): #збір точок шахової дошки 
     imgpoints = []
     deskpoints = []
     image_size = []
@@ -46,7 +46,7 @@ def collections(image_folder, board_size):
     cv2.destroyAllWindows()
     return deskpoints, imgpoints, image_size
 
-def calibrate_camera(deskpoints, imgpoints, image_size):
+def calibrate_camera(deskpoints, imgpoints, image_size): 
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(deskpoints, imgpoints, image_size, None, None)
     return mtx, dist, rvecs, tvecs
 
@@ -77,6 +77,27 @@ def main():
     result = undistort_image(example_image, mtx, dist)
     cv2.imwrite('calibrated_result.jpg', result)
     print("Saved undistorted image as calibrated_result.jpg")
+
+    img = cv2.imread(example_image)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.equalizeHist(gray)
+
+    ret, corners = cv2.findChessboardCorners(gray, CHB_SIZE)
+
+    if ret:
+        objp = coordination_points(CHB_SIZE)
+        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIES)
+
+        success, rvec, tvec = cv2.solvePnP(objp, corners2, mtx, dist)
+
+        print("\nPose estimation:")
+        print("Rotation vector:\n", rvec)
+        print("Translation vector:\n", tvec)
+
+        rotation_matrix, _ = cv2.Rodrigues(rvec)
+        print("Rotation matrix:\n", rotation_matrix)
+    else:
+        print("Chessboard not found in the example image for pose estimation.")
 
 if __name__ == "__main__": #для того, щоб використовувати код як підключаємий пакет
     main()
