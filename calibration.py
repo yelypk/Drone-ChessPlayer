@@ -65,7 +65,8 @@ def undistort_image(image_path, mtx, dist):
 
 def main():
     image_folder = 'frames' 
-    example_image = 'frames/frame_2025-07-24_23-01-11-668690.jpg'
+    images = glob.glob(os.path.join(image_folder, '*.jpg'))
+    example_image = images[0]
 
     deskpoints, imgpoints, image_size = collections(image_folder, CHB_SIZE)
     mtx, dist, rvecs, tvecs = calibrate_camera(deskpoints, imgpoints, image_size)
@@ -81,26 +82,44 @@ def main():
     cv2.imwrite('calibrated_result.jpg', result)
     print("Saved undistorted image as calibrated_result.jpg")
 
-    #img = cv2.imread(example_image)
-    gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-    gray = cv2.equalizeHist(gray)
+    img = cv2.imread(example_image)
+    #шукаю координати шахматної дошки
+    # gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+    # gray = cv2.equalizeHist(gray)
 
-    ret, corners = cv2.findChessboardCorners(gray, CHB_SIZE)
+    # ret, corners = cv2.findChessboardCorners(gray, CHB_SIZE)
 
-    if ret:
-        objp = coordination_points(CHB_SIZE)
-        corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIES)
+    # if ret:
+    #     objp = coordination_points(CHB_SIZE)
+    #     corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIES)
 
-        success, rvec, tvec = cv2.solvePnP(objp, corners2, mtx, dist)
+    #     success, rvec, tvec = cv2.solvePnP(objp, corners2, mtx, dist)
 
-        print("\nPose estimation:")
-        print("Rotation vector:\n", rvec)
-        print("Translation vector:\n", tvec)
+    #     print("\nPose estimation:")
+    #     print("Rotation vector:\n", rvec)
+    #     print("Translation vector:\n", tvec)
 
-        rotation_matrix, _ = cv2.Rodrigues(rvec)
-        print("Rotation matrix:\n", rotation_matrix)
-    else:
-        print("Chessboard not found in the example image for pose estimation.")
+    #     distance = np.linalg.norm(tvec)
+    #     print(f"Відстань до об'єкта: {distance} мм")
+
+    #     rotation_matrix, _ = cv2.Rodrigues(rvec)
+    #     print("Rotation matrix:\n", rotation_matrix)
+    # else:
+    #     print("Chessboard not found in the example image for pose estimation.")
+
+    #шукаю на зображені обєкт координати якого в реальному світі я знаю
+    pt3d = np.array([[0, 0, 1830]], dtype=np.float32) 
+    rvec = np.zeros((3, 1), dtype=np.float32)
+    tvec = np.zeros((3, 1), dtype=np.float32)
+
+    image_points, _ = cv2.projectPoints(pt3d, rvec, tvec, mtx, dist)
+
+    u, v = image_points[0,0]
+    u, v = int(round(u)), int(round(v))
+
+    cv2.circle(img, (u, v), 7, (0, 0, 255), -1) 
+    cv2.imshow("test",img)
+    cv2.waitKey(0)
 
 if __name__ == "__main__": #для того, щоб використовувати код як підключаємий пакет
     main()
