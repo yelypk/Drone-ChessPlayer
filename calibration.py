@@ -29,18 +29,18 @@ def estimate_pose_from_chessboard(img, board_size, mtx, dist):
     gray = cv2.equalizeHist(gray)
     ret, corners = cv2.findChessboardCorners(gray, board_size)
     if not ret:
-        print("Chessboard not found in the image for pose estimation.")
+        print("Chessboard not found in the image for pose estimation.", flush=True)
         return None, None, None
     objp = coordination_points(board_size)
     corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
     success, rvec, tvec = cv2.solvePnP(objp, corners2, mtx, dist)
-    print("\nPose estimation:")
-    print("Rotation vector:\n", rvec)
-    print("Translation vector:\n", tvec)
+    print("\nPose estimation:", flush=True)
+    print("Rotation vector:\n", rvec, flush=True)
+    print("Translation vector:\n", tvec, flush=True)
     distance = np.linalg.norm(tvec)
-    print(f"Відстань до об'єкта: {distance} мм")
+    print(f"\u0412\u0456\u0434\u0441\u0442\u0430\u043d\u044c \u0434\u043e \u043e\u0431\u0454\u043a\u0442\u0430: {distance} \u043c\u043c", flush=True)
     rotation_matrix, _ = cv2.Rodrigues(rvec)
-    print("Rotation matrix:\n", rotation_matrix)
+    print("Rotation matrix:\n", rotation_matrix, flush=True)
     return rvec, tvec, rotation_matrix
 
 def project_known_3d_point(img, point_3d, mtx, dist):
@@ -60,15 +60,19 @@ def pixel_to_normalized_ray(u, v, mtx, dist):
     x = norm[0, 0, 0]
     y = norm[0, 0, 1]
     point_3d = np.array([x, y, 1.0])
-    print(f"3D напрямок (Z=1): {point_3d}")
+    print(f"3D \u043d\u0430\u043f\u0440\u044f\u043c\u043e\u043a (Z=1): {point_3d}", flush=True)
     return point_3d
 
-def print_camera_info(mtx, dist):
-    print("\n" + "="*40)
-    print("CAMERA MATRIX:\n", mtx)
-    print("REVERSED MATRIX:\n", np.linalg.inv(mtx))
-    print("DISTORTION COEFFICIENTS:\n", dist)
-    print("="*40 + "\n")
+def print_camera_info(mtx, dist, rvecs, tvecs):
+    print("\n" + "="*40, flush=True)
+    print("CAMERA MATRIX:\n", mtx, flush=True)
+    print("REVERSED MATRIX:\n", np.linalg.inv(mtx), flush=True)
+    print("DISTORTION COEFFICIENTS:\n", dist, flush=True)
+    for i, (rvec, tvec) in enumerate(zip(rvecs, tvecs)):
+        print(f"Image {i}:", flush=True)
+        print("Rotation vector:\n", rvec, flush=True)
+        print("Translation vector:\n", tvec, flush=True)
+    print("="*40 + "\n", flush=True)
 
 def main():
     image_folder = 'frames' 
@@ -79,19 +83,23 @@ def main():
 
     images = glob.glob(os.path.join(image_folder, '*.jpg'))
     if not images:
-        print("No images in the folder")
+        print("No images in the folder", flush=True)
         return
 
-    print(f"\nFounded {len(images)} of images. Searching for corners...\n")
+    print(f"\nFounded {len(images)} of images. Searching for corners...\n", flush=True)
 
     imgpoints = []
     deskpoints = []
-    image_size = []
+    image_size = None
     cop = coordination_points(CHB_SIZE)
+    valid_images = []
 
     for fname in images:
-        print(f"Processed: {fname}")
+        print(f"Processed: {fname}", flush=True)
         img = cv2.imread(fname)
+        if img is None:
+            print(f"Не удалось загрузить: {fname}", flush=True)
+            continue
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         gray = cv2.equalizeHist(gray)
         ret, corners = cv2.findChessboardCorners(gray, CHB_SIZE)
@@ -100,44 +108,50 @@ def main():
             corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
             imgpoints.append(corners2)
             deskpoints.append(cop)
-            if not image_size:
+            valid_images.append(fname)
+            if image_size is None:
                 image_size = gray.shape[::-1]
             img_drawn = cv2.drawChessboardCorners(img, CHB_SIZE, corners2, ret)
             cv2.imwrite(os.path.join(valid_folder, os.path.basename(fname)), img_drawn)
-            print("Courners have been founded and saved in valid/")
+            print("Courners have been founded and saved in valid/", flush=True)
         else:
             cv2.imwrite(os.path.join(invalid_folder, os.path.basename(fname)), img)
-            print("No corners. Have been saved in invalid/")
+            print("No corners. Have been saved in invalid/", flush=True)
 
-    print(f"\nGood process {len(imgpoints)} from {len(images)}")
+    print(f"\nGood process {len(imgpoints)} from {len(images)}", flush=True)
 
     if len(imgpoints) < 3:
-        print("Not enought images for calibration")
+        print("Not enought images for calibration", flush=True)
         return
 
-    if not image_size:
-        print("image_size пуст — ни одно изображение не дало размер!")
+    if image_size is None:
+        print("image_size пуст — ни одно изображение не дало размер!", flush=True)
         return
 
     try:
         mtx, dist, rvecs, tvecs = calibrate_camera(deskpoints, imgpoints, image_size)
-        print_camera_info(mtx, dist)
+        print("--- Debug: about to print camera info ---", flush=True)
+        print_camera_info(mtx, dist, rvecs, tvecs)
     except Exception as e:
-        print("Ошибка при калибровке:", e)
+        print("Ошибка при калибровке:", e, flush=True)
         return
 
-    example_image = images[0]
+    example_image = valid_images[0] if valid_images else None
+    if not example_image:
+        print("Нет изображений с найденными углами для вывода.", flush=True)
+        return
+
     img = cv2.imread(example_image)
     if img is None:
-        print(f"Не удалось загрузить изображение: {example_image}")
+        print(f"Не удалось загрузить изображение: {example_image}", flush=True)
         return
 
     try:
         result = undistort_image(img, mtx, dist)
         cv2.imwrite('calibrated_result.jpg', result)
-        print("The processed images have been saved: calibrated_result.jpg")
+        print("The processed images have been saved: calibrated_result.jpg", flush=True)
     except Exception as e:
-        print("Ошибка при коррекции изображения:", e)
+        print("Ошибка при коррекции изображения:", e, flush=True)
         return
 
     try:
@@ -147,9 +161,9 @@ def main():
         u, v = 77, 100
         pixel_to_normalized_ray(u, v, mtx, dist)
     except Exception as e:
-        print("Ошибка при расчёте позы или проекции:", e)
+        print("Ошибка при расчёте позы или проекции:", e, flush=True)
 
-    print("END OF MAIN reached")
+    print("END OF MAIN reached", flush=True)
 
 if __name__ == "__main__":
     main()
