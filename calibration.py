@@ -83,7 +83,7 @@ def main():
     print("Saved undistorted image as calibrated_result.jpg")
 
     img = cv2.imread(example_image)
-    #шукаю координати шахматної дошки
+    # шукаю координати шахматної дошки
     # gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
     # gray = cv2.equalizeHist(gray)
 
@@ -107,19 +107,30 @@ def main():
     # else:
     #     print("Chessboard not found in the example image for pose estimation.")
 
-    #шукаю на зображені обєкт координати якого в реальному світі я знаю
-    pt3d = np.array([[0, 0, 1830]], dtype=np.float32) 
-    rvec = np.zeros((3, 1), dtype=np.float32)
-    tvec = np.zeros((3, 1), dtype=np.float32)
+    # шукаю на зображені обєкт координати якого в реальному світі я знаю
+    # pt3d = np.array([[0, 0, 1830]], dtype=np.float32) 
+    # rvec = np.zeros((3, 1), dtype=np.float32)
+    # tvec = np.zeros((3, 1), dtype=np.float32)
 
-    image_points, _ = cv2.projectPoints(pt3d, rvec, tvec, mtx, dist)
+    # image_points, _ = cv2.projectPoints(pt3d, rvec, tvec, mtx, dist)
 
-    u, v = image_points[0,0]
-    u, v = int(round(u)), int(round(v))
+    # u, v = image_points[0,0]
+    # u, v = int(round(u)), int(round(v))
 
-    cv2.circle(img, (u, v), 7, (0, 0, 255), -1) 
-    cv2.imshow("test",img)
-    cv2.waitKey(0)
+    # cv2.circle(img, (u, v), 7, (0, 0, 255), -1) 
+    # cv2.imshow("test",img)
+    # cv2.waitKey(0)
+
+    u=77
+    v=100
+
+    pixel = np.array([[[u, v]]], dtype=np.float32) 
+
+    norm = cv2.undistortPoints(pixel, mtx, dist)  
+    x = norm[0,0,0]
+    y = norm[0,0,1]
+    point_3d = np.array([x, y, 1.0])
+    print(f"3D напрямок (Z=1): {point_3d}")
 
 if __name__ == "__main__": #для того, щоб використовувати код як підключаємий пакет
     main()
