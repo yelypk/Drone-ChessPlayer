@@ -9,6 +9,7 @@ CRITERIES=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 def coordination_points(board_size):
     cop = np.zeros((board_size[0] * board_size[1], 3), np.float32)
     cop[:, :2] = np.mgrid[0:board_size[0], 0:board_size[1]].T.reshape(-1, 2)
+    cop=cop * 11.5
     return cop
 
 def collections(image_folder, board_size): #збір точок шахової дошки 
@@ -64,7 +65,7 @@ def undistort_image(image_path, mtx, dist):
 
 def main():
     image_folder = 'frames' 
-    example_image = 'frames/kFM1C.jpg'
+    example_image = 'frames/frame_2025-07-24_23-01-11-668690.jpg'
 
     deskpoints, imgpoints, image_size = collections(image_folder, CHB_SIZE)
     mtx, dist, rvecs, tvecs = calibrate_camera(deskpoints, imgpoints, image_size)
@@ -78,8 +79,8 @@ def main():
     cv2.imwrite('calibrated_result.jpg', result)
     print("Saved undistorted image as calibrated_result.jpg")
 
-    img = cv2.imread(example_image)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #img = cv2.imread(example_image)
+    gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
     gray = cv2.equalizeHist(gray)
 
     ret, corners = cv2.findChessboardCorners(gray, CHB_SIZE)
