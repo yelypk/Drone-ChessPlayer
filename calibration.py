@@ -71,6 +71,8 @@ def main():
     mtx, dist, rvecs, tvecs = calibrate_camera(deskpoints, imgpoints, image_size)
 
     print("Camera matrix:\n", mtx)
+    matrixreverse=np.linalg.inv(mtx)
+    print("Reversed camera matrix:\n", matrixreverse)
     print("Distortion coefficients:\n", dist)
 
     np.savez('camera_calibration.npz', mtx=mtx, dist=dist)
