@@ -68,12 +68,7 @@ def print_camera_info(mtx, dist, rvecs, tvecs):
     print("CAMERA MATRIX:\n", mtx, flush=True)
     print("REVERSED MATRIX:\n", np.linalg.inv(mtx), flush=True)
     print("DISTORTION COEFFICIENTS:\n", dist, flush=True)
-    for i, (rvec, tvec) in enumerate(zip(rvecs, tvecs)):
-        print(f"Image {i}:", flush=True)
-        print("Rotation vector:\n", rvec, flush=True)
-        print("Translation vector:\n", tvec, flush=True)
-    print("="*40 + "\n", flush=True)
-
+  
 def main():
     image_folder = 'frames' 
     valid_folder = 'valid'
@@ -95,28 +90,28 @@ def main():
     valid_images = []
 
     for fname in images:
-        print(f"Processed: {fname}", flush=True)
-        img = cv2.imread(fname)
-        if img is None:
-            print(f"Не удалось загрузить: {fname}", flush=True)
-            continue
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.equalizeHist(gray)
-        ret, corners = cv2.findChessboardCorners(gray, CHB_SIZE)
+            print(f"Processed: {fname}", flush=True)
+            img = cv2.imread(fname)
+            if img is None:
+                print(f"Не удалось загрузить: {fname}", flush=True)
+                continue
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            gray = cv2.equalizeHist(gray)
+            ret, corners = cv2.findChessboardCorners(gray, CHB_SIZE)
 
-        if ret and corners.shape[0] == CHB_SIZE[0] * CHB_SIZE[1]:
-            corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
-            imgpoints.append(corners2)
-            deskpoints.append(cop)
-            valid_images.append(fname)
-            if image_size is None:
-                image_size = gray.shape[::-1]
-            img_drawn = cv2.drawChessboardCorners(img, CHB_SIZE, corners2, ret)
-            cv2.imwrite(os.path.join(valid_folder, os.path.basename(fname)), img_drawn)
-            print("Courners have been founded and saved in valid/", flush=True)
-        else:
-            cv2.imwrite(os.path.join(invalid_folder, os.path.basename(fname)), img)
-            print("No corners. Have been saved in invalid/", flush=True)
+            if ret and corners.shape[0] == CHB_SIZE[0] * CHB_SIZE[1]:
+                corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), CRITERIA)
+                imgpoints.append(corners2)
+                deskpoints.append(cop)
+                valid_images.append(fname)
+                if image_size is None:
+                    image_size = gray.shape[::-1]
+                img_drawn = cv2.drawChessboardCorners(img, CHB_SIZE, corners2, ret)
+                cv2.imwrite(os.path.join(valid_folder, os.path.basename(fname)), img_drawn)
+                print("Courners have been founded and saved in valid/", flush=True)
+            else:
+                cv2.imwrite(os.path.join(invalid_folder, os.path.basename(fname)), img)
+                print("No corners. Have been saved in invalid/", flush=True)
 
     print(f"\nGood process {len(imgpoints)} from {len(images)}", flush=True)
 
