@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import cv2
+from src.drone.io.video import show_resized
 from src.drone.core.types import CameraIntrinsics
 from src.drone.core.pose import estimate_pose_from_chessboard
 from src.drone.core.geom import project_points, pixel_to_normalized_ray
@@ -44,7 +45,7 @@ def main():
         frame = draw_axes(frame, intr.K, intr.dist, pose.rvec, pose.tvec)
         cv2.putText(frame, f"cell: ({i},{j})", (20, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-        cv2.imshow('Projection', frame)
+        show_resized('Projection', frame)
 
         key = cv2.waitKey(0) & 0xFF
         if key in (ord('q'), 27):  # Q or Esc
@@ -62,4 +63,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

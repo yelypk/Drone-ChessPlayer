@@ -2,6 +2,18 @@ import os
 from datetime import datetime
 import cv2
 
+# Розміри екрана (в пікселях)
+SCREEN_W = 1600
+SCREEN_H = 800
+
+def show_resized(win_name, img):
+    h, w = img.shape[:2]
+    scale = min(SCREEN_W / w, SCREEN_H / h)  # коефіцієнт зменшення
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+    resized = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    cv2.imshow(win_name, resized)
+
 def generate_filename(folder='videos', prefix='video', ext='.avi'):
     os.makedirs(folder, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
@@ -20,7 +32,9 @@ def open_writer(path, fourcc_str='XVID', fps=20.0, frame_size=None):
     return cv2.VideoWriter(path, fourcc, fps, frame_size)
 
 def capture_loop(camera_index=0):
-    cap = open_camera(camera_index)
+    url1 = "rtsp://admin:klop100500@192.168.1.125:554/cam/realmonitor?channel=1&subtype=0"
+    url2 = "rtsp://admin:klop100500@192.168.1.126:554/cam/realmonitor?channel=1&subtype=0"
+    cap = open_camera(url1)
     try:
         ret, frame = cap.read()
         if not ret:
@@ -34,7 +48,7 @@ def capture_loop(camera_index=0):
             if not ret:
                 break
             writer.write(frame)
-            cv2.imshow('Recording...', frame)
+            show_resized('Recording...', frame)
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 break
